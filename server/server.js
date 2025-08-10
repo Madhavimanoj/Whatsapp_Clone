@@ -9,17 +9,19 @@ const app = express();
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 
-// ✅ Correct CORS origins
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://6898a40d3dde93412ae8d034--statuesque-starlight-9f4193.netlify.app/" 
+  "https://6898a6a450d5875a9ce148b6--statuesque-starlight-9f4193.netlify.app"
 ];
+
+
 
 app.use(cors({
   origin: allowedOrigins,
   methods: ['GET', 'POST'],
-  credentials: true
+  credentials: true,
 }));
+
 
 app.use(bodyParser.json());
 
