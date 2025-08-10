@@ -9,11 +9,9 @@ const app = express();
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 
-// Allow only your frontend to connect in production
 const allowedOrigins = [
   "http://localhost:3000", // Local dev
-  "https://YOUR-FRONTEND-VERCEL-URL.vercel.app", // Replace with your deployed frontend URL
-];
+  "https://YOUR-FRONTEND-VERCEL-URL.vercel.app", ]
 
 const io = new Server(server, {
   cors: {
@@ -24,12 +22,12 @@ const io = new Server(server, {
 });
 
 // Middleware
-app.use(
-  cors({
-    origin: allowedOrigins,
-    credentials: true,
-  })
-);
+app.use(cors({
+  origin: ['statuesque-starlight-9f4193.netlify.app'],
+  methods: ['GET', 'POST'],
+  credentials: true
+}));
+
 app.use(bodyParser.json());
 
 // Routes
@@ -46,15 +44,15 @@ mongoose
     useUnifiedTopology: true,
   })
   .then(() => {
-    console.log("✅ MongoDB connected");
+    console.log(" MongoDB connected");
     const PORT = process.env.PORT || 5000;
     server.listen(PORT, () => {
-      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`Server running on port ${PORT}`);
     });
   })
-  .catch((err) => console.error("❌ MongoDB connection error:", err));
+  .catch((err) => console.error(" MongoDB connection error:", err));
 
-// Socket.io connection handling
+
 io.on("connection", (socket) => {
   console.log("🔌 A user connected:", socket.id);
 
@@ -63,11 +61,11 @@ io.on("connection", (socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log("❌ User disconnected:", socket.id);
+    console.log("User disconnected:", socket.id);
   });
 });
 
 // Root endpoint
 app.get("/", (req, res) => {
-  res.send("✅ Chat backend is running");
+  res.send(" Chat backend is running");
 });
