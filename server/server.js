@@ -9,10 +9,21 @@ const app = express();
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 
+// ✅ Correct CORS origins
 const allowedOrigins = [
-  "http://localhost:3000", // Local dev
-  "https://YOUR-FRONTEND-VERCEL-URL.vercel.app", ]
+  "http://localhost:3000",
+  "https://statuesque-starlight-9f4193.netlify.app" // Your Netlify URL
+];
 
+app.use(cors({
+  origin: allowedOrigins,
+  methods: ['GET', 'POST'],
+  credentials: true
+}));
+
+app.use(bodyParser.json());
+
+// ✅ Socket.IO with same CORS
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -20,15 +31,6 @@ const io = new Server(server, {
     credentials: true,
   },
 });
-
-// Middleware
-app.use(cors({
-  origin: ['statuesque-starlight-9f4193.netlify.app'],
-  methods: ['GET', 'POST'],
-  credentials: true
-}));
-
-app.use(bodyParser.json());
 
 // Routes
 const webhookRoutes = require("./routes/webhook");
@@ -44,17 +46,17 @@ mongoose
     useUnifiedTopology: true,
   })
   .then(() => {
-    console.log(" MongoDB connected");
+    console.log("✅ MongoDB connected");
     const PORT = process.env.PORT || 5000;
     server.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`🚀 Server running on port ${PORT}`);
     });
   })
-  .catch((err) => console.error(" MongoDB connection error:", err));
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
 
-
+// Socket.IO events
 io.on("connection", (socket) => {
-  console.log("🔌 A user connected:", socket.id);
+  console.log("🔌 User connected:", socket.id);
 
   socket.on("typing", (wa_id) => {
     socket.broadcast.emit("user_typing", wa_id);
@@ -67,5 +69,5 @@ io.on("connection", (socket) => {
 
 // Root endpoint
 app.get("/", (req, res) => {
-  res.send(" Chat backend is running");
+  res.send("✅ Chat backend is running");
 });

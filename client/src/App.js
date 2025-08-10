@@ -4,10 +4,9 @@ import ChatWindow from "./components/ChatWindow";
 import "./App.css";
 import { io } from "socket.io-client";
 
-// Directly use your Render backend URL in production
 
-  const API_URL = process.env.REACT_APP_API_URL;
-
+const API_URL =
+  process.env.REACT_APP_API_URL || "http://localhost:5000";
 
 // Socket connection
 const socket = io(API_URL, {
