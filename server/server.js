@@ -11,7 +11,7 @@ const { Server } = require("socket.io");
 
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://6898a6a450d5875a9ce148b6--statuesque-starlight-9f4193.netlify.app"
+  "statuesque-starlight-9f4193.netlify.app"
 ];
 
 
