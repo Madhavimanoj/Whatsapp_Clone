@@ -7,23 +7,23 @@ import "./App.css";
 // Backend URL as per environment
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-// Initialize WebSocket connection
+
 const socket = io(API_URL, {
   transports: ["websocket"],
   withCredentials: true, // Include cross-origin credentials
 });
 
 function App() {
-  const [chats, setChats] = useState([]); // All available chats
-  const [selectedChat, setSelectedChat] = useState(null); // Currently selected chat
-  const [newMessage, setNewMessage] = useState(""); // Input for new messages
-  const [typing, setTyping] = useState(false); // Typing indicator status
+  const [chats, setChats] = useState([]); 
+  const [selectedChat, setSelectedChat] = useState(null); 
+  const [newMessage, setNewMessage] = useState(""); 
+  const [typing, setTyping] = useState(false); 
 
   // Fetch messages and handle WebSocket events
   useEffect(() => {
     fetchMessages();
 
-    // Event: New message received
+   
     socket.on("new_message", (msg) => {
       setChats((prevChats) => {
         const updatedChats = [...prevChats];

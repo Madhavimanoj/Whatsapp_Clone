@@ -29,10 +29,14 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-app.use(cors(corsOptions)); // Apply CORS middleware
-app.options("*", cors(corsOptions)); // Handle preflight requests
+app.use(cors({
+  origin: 'https://statuesque-starlight-9f4193.netlify.app/', // netlify
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  credentials: true, 
+}));
+app.options("*", cors(corsOptions)); 
 
-// Body parser to parse incoming requests
+
 app.use(express.json());
 
 // Socket.IO setup with CORS
