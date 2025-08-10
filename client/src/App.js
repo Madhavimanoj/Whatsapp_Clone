@@ -4,46 +4,51 @@ import { io } from "socket.io-client";
 import ChatWindow from "./components/ChatWindow";
 import "./App.css";
 
+// Backend URL as per environment
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-// Socket connection with secure configuration
+// Initialize WebSocket connection
 const socket = io(API_URL, {
   transports: ["websocket"],
-  withCredentials: true,
+  withCredentials: true, // Include cross-origin credentials
 });
 
 function App() {
-  const [chats, setChats] = useState([]);
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [newMessage, setNewMessage] = useState("");
-  const [typing, setTyping] = useState(false);
+  const [chats, setChats] = useState([]); // All available chats
+  const [selectedChat, setSelectedChat] = useState(null); // Currently selected chat
+  const [newMessage, setNewMessage] = useState(""); // Input for new messages
+  const [typing, setTyping] = useState(false); // Typing indicator status
 
+  // Fetch messages and handle WebSocket events
   useEffect(() => {
     fetchMessages();
 
-    // Handle socket events
+    // Event: New message received
     socket.on("new_message", (msg) => {
       setChats((prevChats) => {
-        const updated = [...prevChats];
-        const chat = updated.find((c) => c.wa_id === msg.wa_id);
+        const updatedChats = [...prevChats];
+        const chatIndex = updatedChats.findIndex((c) => c.wa_id === msg.wa_id);
 
-        if (chat) {
+        if (chatIndex > -1) {
+          const chat = updatedChats[chatIndex];
           const alreadyExists = chat.messages.some(
             (m) => m.meta_msg_id === msg.meta_msg_id
           );
+
           if (!alreadyExists) chat.messages.push(msg);
         } else {
-          updated.push({
+          updatedChats.push({
             wa_id: msg.wa_id,
             name: msg.name,
             number: msg.number,
             messages: [msg],
           });
         }
-        return updated;
+        return updatedChats;
       });
     });
 
+    // Event: Message status updated
     socket.on("status_updated", (updatedMsg) => {
       setChats((prevChats) =>
         prevChats.map((chat) =>
@@ -61,13 +66,15 @@ function App() {
       );
     });
 
+    // Event: User typing
     socket.on("user_typing", (wa_id) => {
       if (selectedChat?.wa_id === wa_id) {
         setTyping(true);
-        setTimeout(() => setTyping(false), 1500);
+        setTimeout(() => setTyping(false), 1500); // Clear typing after 1.5 seconds
       }
     });
 
+    // Cleanup: Unsubscribe from events
     return () => {
       socket.off("new_message");
       socket.off("status_updated");
@@ -75,13 +82,53 @@ function App() {
     };
   }, [selectedChat?.wa_id]);
 
-  const fetchMessages = () => {
-    axios
-      .get(`${API_URL}/webhook/messages`)
-      .then((res) => setChats(res.data))
-      .catch((err) => console.error("Failed to fetch messages:", err));
+  // Fetch chat messages from the backend
+  const fetchMessages = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/webhook/messages`);
+      if (res.data && res.data.length > 0) {
+        setChats(res.data);
+      } else {
+        setChats([
+          {
+            wa_id: "demo1",
+            name: "Demo User",
+            number: "+1234567890",
+            messages: [
+              {
+                meta_msg_id: "welcome-msg",
+                message: "Welcome! No real data yet.",
+                timestamp: new Date(),
+                status: "delivered",
+                direction: "incoming",
+              },
+            ],
+          },
+        ]);
+      }
+    } catch (error) {
+      console.error("Failed to fetch messages:", error);
+      // Provide fallback data
+      setChats([
+        {
+          wa_id: "error1",
+          name: "Error Chat",
+          number: "+1234567891",
+          messages: [
+            {
+              meta_msg_id: "error-msg",
+              message: "Failed to load messages.",
+              timestamp: new Date(),
+              status: "failed",
+              direction: "incoming",
+            },
+          ],
+        },
+      ]);
+    }
   };
 
+  // Send new messages
   const handleSend = async () => {
     if (!newMessage || !selectedChat) return;
 
@@ -98,14 +145,15 @@ function App() {
 
     try {
       await axios.post(`${API_URL}/webhook/receive`, payload);
-      setNewMessage("");
-    } catch (err) {
-      console.error("Message sending failed:", err);
+      setNewMessage(""); // Clear input
+    } catch (error) {
+      console.error("Message sending failed:", error);
     }
   };
 
   return (
     <div className="app-container">
+      {/* Sidebar with chat list */}
       <div className="sidebar">
         {chats.map((chat, i) => (
           <div
@@ -115,7 +163,11 @@ function App() {
             }`}
             onClick={() => setSelectedChat(chat)}
           >
-            <img src="/images/profile.png" alt="Profile" className="profile-pic" />
+            <img
+              src="/images/profile.png"
+              alt="Profile"
+              className="profile-pic"
+            />
             <div>
               <strong>{chat.name}</strong>
               <br />
@@ -124,17 +176,24 @@ function App() {
           </div>
         ))}
       </div>
+
+      {/* Chat window */}
       <div className="chat-window">
         {selectedChat ? (
           <>
+            {/* Chat header */}
             <div className="chat-header">
               <strong>{selectedChat.name}</strong>
               <br />
               <small>{selectedChat.number}</small>
             </div>
+
+            {/* Chat messages */}
             <div className="chat-messages">
               <ChatWindow chat={selectedChat} typing={typing} />
             </div>
+
+            {/* Send message box */}
             <div className="send-box">
               <input
                 type="text"
