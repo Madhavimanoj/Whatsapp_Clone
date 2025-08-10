@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import { io } from "socket.io-client";
 import ChatWindow from "./components/ChatWindow";
 import "./App.css";
-import { io } from "socket.io-client";
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-const API_URL =
-  process.env.REACT_APP_API_URL || "http://localhost:5000";
-
-// Socket connection
+// Socket connection with secure configuration
 const socket = io(API_URL, {
   transports: ["websocket"],
   withCredentials: true,
@@ -23,18 +21,17 @@ function App() {
   useEffect(() => {
     fetchMessages();
 
+    // Handle socket events
     socket.on("new_message", (msg) => {
       setChats((prevChats) => {
         const updated = [...prevChats];
-        const existing = updated.find((c) => c.wa_id === msg.wa_id);
+        const chat = updated.find((c) => c.wa_id === msg.wa_id);
 
-        if (existing) {
-          const alreadyExists = existing.messages.some(
+        if (chat) {
+          const alreadyExists = chat.messages.some(
             (m) => m.meta_msg_id === msg.meta_msg_id
           );
-          if (!alreadyExists) {
-            existing.messages.push(msg);
-          }
+          if (!alreadyExists) chat.messages.push(msg);
         } else {
           updated.push({
             wa_id: msg.wa_id,
@@ -43,23 +40,24 @@ function App() {
             messages: [msg],
           });
         }
-        return [...updated];
+        return updated;
       });
     });
 
     socket.on("status_updated", (updatedMsg) => {
       setChats((prevChats) =>
-        prevChats.map((chat) => {
-          if (chat.wa_id === updatedMsg.wa_id) {
-            const newMessages = chat.messages.map((msg) =>
-              msg.meta_msg_id === updatedMsg.meta_msg_id
-                ? { ...msg, status: updatedMsg.status }
-                : msg
-            );
-            return { ...chat, messages: newMessages };
-          }
-          return chat;
-        })
+        prevChats.map((chat) =>
+          chat.wa_id === updatedMsg.wa_id
+            ? {
+                ...chat,
+                messages: chat.messages.map((msg) =>
+                  msg.meta_msg_id === updatedMsg.meta_msg_id
+                    ? { ...msg, status: updatedMsg.status }
+                    : msg
+                ),
+              }
+            : chat
+        )
       );
     });
 
@@ -80,47 +78,8 @@ function App() {
   const fetchMessages = () => {
     axios
       .get(`${API_URL}/webhook/messages`)
-      .then((res) => {
-        if (res.data && res.data.length > 0) {
-          setChats(res.data);
-        } else {
-          setChats([
-            {
-              wa_id: "123456",
-              name: "Demo User",
-              number: "+911234567890",
-              messages: [
-                {
-                  meta_msg_id: "demo1",
-                  message: "Welcome! No real messages yet.",
-                  timestamp: new Date(),
-                  status: "delivered",
-                  direction: "incoming",
-                },
-              ],
-            },
-          ]);
-        }
-      })
-      .catch((err) => {
-        console.error(err);
-        setChats([
-          {
-            wa_id: "error1",
-            name: "Mia",
-            number: "+911234567890",
-            messages: [
-              {
-                meta_msg_id: "error-msg",
-                message: "Hello Madhavi.",
-                timestamp: new Date(),
-                status: "failed",
-                direction: "incoming",
-              },
-            ],
-          },
-        ]);
-      });
+      .then((res) => setChats(res.data))
+      .catch((err) => console.error("Failed to fetch messages:", err));
   };
 
   const handleSend = async () => {
@@ -133,7 +92,7 @@ function App() {
       number: selectedChat.number,
       message: newMessage,
       timestamp: new Date().toISOString(),
-      meta_msg_id: "msg_" + Date.now(),
+      meta_msg_id: `msg_${Date.now()}`,
       direction: "outgoing",
     };
 
@@ -141,7 +100,7 @@ function App() {
       await axios.post(`${API_URL}/webhook/receive`, payload);
       setNewMessage("");
     } catch (err) {
-      console.error("Send failed:", err);
+      console.error("Message sending failed:", err);
     }
   };
 
@@ -165,7 +124,6 @@ function App() {
           </div>
         ))}
       </div>
-
       <div className="chat-window">
         {selectedChat ? (
           <>
@@ -188,12 +146,7 @@ function App() {
             </div>
           </>
         ) : (
-          <div
-            className="chat-messages"
-            style={{ padding: "20px", textAlign: "center" }}
-          >
-            <p>Select a chat</p>
-          </div>
+          <p>Select a chat to start messaging</p>
         )}
       </div>
     </div>

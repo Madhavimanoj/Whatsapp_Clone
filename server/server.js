@@ -1,7 +1,7 @@
 require("dotenv").config();
+
 const express = require("express");
 const mongoose = require("mongoose");
-const bodyParser = require("body-parser");
 const cors = require("cors");
 const http = require("http");
 
@@ -9,17 +9,15 @@ const app = express();
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 
-// Full URLs with protocol in allowed origins
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://statuesque-starlight-9f4193.netlify.app"
+  "https://statuesque-starlight-9f4193.netlify.app",
 ];
 
-// CORS options with origin check function
+// CORS setup with origin validation
 const corsOptions = {
   origin: function (origin, callback) {
-    // allow requests with no origin like Postman or curl
-    if (!origin) return callback(null, true);
+    if (!origin) return callback(null, true); // Allow requests like Postman or curl
     if (allowedOrigins.indexOf(origin) === -1) {
       const msg = `CORS policy: The origin ${origin} is not allowed.`;
       return callback(new Error(msg), false);
@@ -27,18 +25,17 @@ const corsOptions = {
     return callback(null, true);
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
-app.use(cors(corsOptions));
+app.use(cors(corsOptions)); // Apply CORS middleware
+app.options("*", cors(corsOptions)); // Handle preflight requests
 
-// Handle preflight OPTIONS requests
-app.options('*', cors(corsOptions));
+// Body parser to parse incoming requests
+app.use(express.json());
 
-app.use(bodyParser.json());
-
-// Socket.IO with same CORS settings
+// Socket.IO setup with CORS
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
@@ -49,10 +46,8 @@ const io = new Server(server, {
 
 // Routes
 const webhookRoutes = require("./routes/webhook");
-app.use("/webhook", webhookRoutes);
-
-// Attach io to app so routes can emit events
-app.set("io", io);
+app.use("/webhook", webhookRoutes); // Use webhook routes
+app.set("io", io); // Attach io instance to app
 
 // MongoDB connection
 mongoose
@@ -72,17 +67,11 @@ mongoose
 // Socket.IO events
 io.on("connection", (socket) => {
   console.log("🔌 User connected:", socket.id);
-
-  socket.on("typing", (wa_id) => {
-    socket.broadcast.emit("user_typing", wa_id);
-  });
-
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-  });
+  socket.on("typing", (wa_id) => socket.broadcast.emit("user_typing", wa_id));
+  socket.on("disconnect", () => console.log("🔌 User disconnected:", socket.id));
 });
 
-// Root endpoint
+// Root endpoint to test server
 app.get("/", (req, res) => {
   res.send("✅ Chat backend is running");
 });
