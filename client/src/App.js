@@ -4,9 +4,11 @@ import ChatWindow from "./components/ChatWindow";
 import "./App.css";
 import { io } from "socket.io-client";
 
-const API_URL = process.env.REACT_APP_API_URL;
+// Directly use your Render backend URL in production
+const API_URL =
+  process.env.REACT_APP_API_URL || "https://chat-backend-ln6b.onrender.com";
 
-
+// Socket connection
 const socket = io(API_URL, {
   transports: ["websocket"],
   withCredentials: true,
