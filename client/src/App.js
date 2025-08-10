@@ -5,8 +5,9 @@ import "./App.css";
 import { io } from "socket.io-client";
 
 // Directly use your Render backend URL in production
-const API_URL =
-  process.env.REACT_APP_API_URL || "https://chat-backend-ln6b.onrender.com";
+
+  const API_URL = process.env.REACT_APP_API_URL;
+
 
 // Socket connection
 const socket = io(API_URL, {
