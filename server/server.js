@@ -12,7 +12,7 @@ const { Server } = require("socket.io");
 // ✅ Correct CORS origins
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://statuesque-starlight-9f4193.netlify.app" // Your Netlify URL
+  "https://6898a40d3dde93412ae8d034--statuesque-starlight-9f4193.netlify.app/" 
 ];
 
 app.use(cors({
