@@ -9,23 +9,36 @@ const app = express();
 const server = http.createServer(app);
 const { Server } = require("socket.io");
 
+// Full URLs with protocol in allowed origins
 const allowedOrigins = [
   "http://localhost:3000",
-  "statuesque-starlight-9f4193.netlify.app"
+  "https://statuesque-starlight-9f4193.netlify.app"
 ];
 
-
-
-app.use(cors({
-  origin: allowedOrigins,
-  methods: ['GET', 'POST'],
+// CORS options with origin check function
+const corsOptions = {
+  origin: function (origin, callback) {
+    // allow requests with no origin like Postman or curl
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = `CORS policy: The origin ${origin} is not allowed.`;
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
   credentials: true,
-}));
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+};
 
+app.use(cors(corsOptions));
+
+// Handle preflight OPTIONS requests
+app.options('*', cors(corsOptions));
 
 app.use(bodyParser.json());
 
-// ✅ Socket.IO with same CORS
+// Socket.IO with same CORS settings
 const io = new Server(server, {
   cors: {
     origin: allowedOrigins,
